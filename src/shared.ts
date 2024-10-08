@@ -17,6 +17,7 @@ export interface Attendee {
     referralInfo?: string;
     websiteFeedback?: string;
     sendContactToNonMutual?: boolean;
+    noShow?: boolean; 
 }
 
 export interface QueryError {
