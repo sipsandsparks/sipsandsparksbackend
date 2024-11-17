@@ -1,11 +1,10 @@
-import nodemailer from 'nodemailer'
-import axios from 'axios'
-import express, { Request, Response } from 'express'
-import cors from 'cors'
-import { Pool } from 'pg'
-import { CronJob } from 'cron'
-import { Gender, isQueryError } from './shared'
-import type { Attendee, EventbriteEventsResponse, QueryError } from './shared'
+const nodemailer = require('nodemailer')
+const axios = require('axios')
+const express = require('express')
+const cors = require('cors')
+const { Pool } = require('pg')
+const { CronJob } = require('cron')
+const { Gender, isQueryError } = require('./shared')
 
 const app = express()
 const Port = process.env.PORT ?? 3000
@@ -19,79 +18,6 @@ const AdminEmail = process.env.ADMIN_EMAIL
 const AdminPassword = process.env.ADMIN_PASSWORD
 const MatchesEmail = 'matches@sipsandsparks.org'
 const ContactEmail = 'contact@sipsandsparks.org'
-
-interface Event {
-  id: string
-  name: string
-  start: string
-}
-
-interface PublicAttendee {
-  name: string
-  id: number
-}
-
-enum EventbriteTicketClass {
-  MaleTicket = 'Male Ticket',
-  FemaleTicket = 'Female Ticket'
-}
-
-interface EventbriteAttendeesResponse {
-  pagination: {
-    has_more_items: boolean
-  }
-  attendees: {
-    profile: {
-      first_name: string
-      last_name: string
-      email: string
-    }
-    status: string
-    ticket_class_name: EventbriteTicketClass
-  }[]
-}
-
-const EventbriteTicketClassToGender: Record<EventbriteTicketClass, Gender> = {
-  [EventbriteTicketClass.MaleTicket]: Gender.MALE,
-  [EventbriteTicketClass.FemaleTicket]: Gender.FEMALE
-}
-
-const GenderToOppositeGender: Record<Gender, Gender> = {
-  [Gender.MALE]: Gender.FEMALE,
-  [Gender.FEMALE]: Gender.MALE
-}
-
-interface PostAdminLoginRequest {
-  username: string
-  password: string
-}
-
-interface PostAdminEventParticipantsRequest {
-  username: string
-  password: string
-  eventId: string
-}
-
-interface PostEventParticipantsRequest {
-  eventId: string
-  firstName: string
-  lastName: string
-  email: string
-}
-
-interface PostMatchRequest {
-  eventId: string
-  firstName: string
-  lastName: string
-  email: string
-  matches: string[]
-  notes: string
-  feedback: string
-  referralInfo: string
-  cellPhone: string
-  websiteFeedback?: string
-  sendContactToNonMutual: boolean
-}
 
 const MatchesTransporter = nodemailer.createTransport({
   host: 'smtp.zoho.com',
@@ -120,11 +46,11 @@ const pool = new Pool({
   }
 })
 
-function normalizeString(str: string) {
+function normalizeString(str) {
   return str.toLowerCase().trim()
 }
 
-function capitalizeName(name: string) {
+function capitalizeName(name) {
   if (name.length === 0) {
     return name
   }
@@ -134,7 +60,7 @@ function capitalizeName(name: string) {
   return trimmedName.charAt(0).toUpperCase() + trimmedName.slice(1)
 }
 
-async function sendConfirmationEmail(attendee: Attendee, notes: string, interestPeople: Attendee[]) {
+async function sendConfirmationEmail(attendee, notes, interestPeople) {
   try {
     let confirmationText = `Dear ${attendee.firstName},\n\nThank you for attending our event. We have received your submission. Below is a copy of the information you provided:`
     if (interestPeople.length > 0) {
@@ -167,11 +93,11 @@ async function sendConfirmationEmail(attendee: Attendee, notes: string, interest
     } else {
       console.error('Error sending confirmation email.')
     }
-    return { message: 'Error sending confirmation email.' } as QueryError
+    return { message: 'Error sending confirmation email.' }
   }
 }
 
-async function sendReminderEmail(firstName: string, email: string) {
+async function sendReminderEmail(firstName, email) {
   try {
     let matchText = `Dear ${firstName},<br /><br />Thank you for attending our event! We noticed that we haven't received your match form submission yet. If this was an oversight, please finalize your choices and submit your match form <a href='https://sipsandsparks.org/match'>here</a>.<br /><br />`
     matchText += `If you did not feel you found a meaningful connection this time around, don't worry, we'll be hosting many more speed dating events in the future with tons of different people and possibilities!<br /><br />`
@@ -200,7 +126,7 @@ async function sendReminderEmail(firstName: string, email: string) {
   }
 }
 
-async function sendReminderEmails(eventId: string) {
+async function sendReminderEmails(eventId) {
   const attendees = await getAttendeesFromDatabaseToRemind(eventId)
   if (isQueryError(attendees) || attendees.length === 0) {
     return
@@ -212,7 +138,7 @@ async function sendReminderEmails(eventId: string) {
   }
 }
 
-async function getAttendeesFromDatabaseToRemind(eventId: string) {
+async function getAttendeesFromDatabaseToRemind(eventId) {
   const client = await pool.connect()
   try {
     const result = await client.query(
@@ -234,13 +160,13 @@ async function getAttendeesFromDatabaseToRemind(eventId: string) {
     } else {
       console.error('Error fetching participants from database.')
     }
-    return { message: 'Error fetching participants from database.' } as QueryError
+    return { message: 'Error fetching participants from database.' }
   } finally {
     client.release()
   }
 }
 
-async function getAttendeesFromDatabase(eventId: string) {
+async function getAttendeesFromDatabase(eventId) {
   const client = await pool.connect()
   try {
     const result = await client.query(
@@ -252,7 +178,7 @@ async function getAttendeesFromDatabase(eventId: string) {
       [eventId]
     )
 
-    const attendees: Attendee[] = result.rows.map((att) => ({
+    const attendees = result.rows.map((att) => ({
       firstName: att.first_name,
       lastName: att.last_name,
       email: att.email,
@@ -275,13 +201,13 @@ async function getAttendeesFromDatabase(eventId: string) {
     } else {
       console.error('Error fetching participants from database.')
     }
-    return { message: 'Error fetching participants from database.' } as QueryError
+    return { message: 'Error fetching participants from database.' }
   } finally {
     client.release()
   }
 }
 
-async function addAttendeesToDatabase(eventId: string, attendees: Attendee[]) {
+async function addAttendeesToDatabase(eventId, attendees) {
   const client = await pool.connect()
   try {
     await client.query('BEGIN') // Start a transaction
@@ -296,7 +222,7 @@ async function addAttendeesToDatabase(eventId: string, attendees: Attendee[]) {
                     first_name = EXCLUDED.first_name, 
                     last_name = EXCLUDED.last_name, 
                     gender = EXCLUDED.gender, 
-                    attendee_id = EXCLUDED.attendee_id;
+                    attendee_id = EXCLUDED.attendee_id
             `,
         [eventId, att.firstName, att.lastName, att.email, att.gender, att.id]
       )
@@ -312,13 +238,13 @@ async function addAttendeesToDatabase(eventId: string, attendees: Attendee[]) {
     } else {
       console.error('Error adding participants to database.')
     }
-    return { message: 'Error adding participants to database.' } as QueryError
+    return { message: 'Error adding participants to database.' }
   } finally {
     client.release()
   }
 }
 
-async function updateAttendeeAttendance(eventId: string, email: string) {
+async function updateAttendeeAttendance(eventId, email) {
   const client = await pool.connect()
   try {
     await client.query(
@@ -337,22 +263,22 @@ async function updateAttendeeAttendance(eventId: string, email: string) {
     } else {
       console.error('Error updating attendance in database.')
     }
-    return { message: 'Error updating attendance in database.' } as QueryError
+    return { message: 'Error updating attendance in database.' }
   } finally {
     client.release()
   }
 }
 
 async function addMatchFormSubmissionToDatabase(
-  eventId: string,
-  email: string,
-  interests: string,
-  feedback: string,
-  referralInfo: string,
-  cellPhone: string,
-  notes: string,
-  websiteFeedback: string,
-  sendContactToNonMutual: boolean
+  eventId,
+  email,
+  interests,
+  feedback,
+  referralInfo,
+  cellPhone,
+  notes,
+  websiteFeedback,
+  sendContactToNonMutual
 ) {
   const client = await pool.connect()
   try {
@@ -378,14 +304,14 @@ async function addMatchFormSubmissionToDatabase(
     } else {
       console.error('Error adding match form submission to database.')
     }
-    return { message: 'Error adding match form submission to database.' } as QueryError
+    return { message: 'Error adding match form submission to database.' }
   } finally {
     client.release()
   }
 }
 
-function removeDuplicateEmailsFromAttendees(attendees: Attendee[]) {
-  const seenEmails = new Set<string>()
+function removeDuplicateEmailsFromAttendees(attendees) {
+  const seenEmails = new Set()
   return attendees.filter((att) => {
     if (seenEmails.has(att.email)) {
       return false
@@ -397,7 +323,7 @@ function removeDuplicateEmailsFromAttendees(attendees: Attendee[]) {
 }
 
 async function getEventsFromEventbrite(getAll = false) {
-  let allEvents: Event[] = []
+  let allEvents
   let currentPage = 1
   let checkNextPage = true
   try {
@@ -411,7 +337,7 @@ async function getEventsFromEventbrite(getAll = false) {
         }
       )
 
-      const data = response.data as EventbriteEventsResponse
+      const data = response.data
 
       if (!data.pagination.has_more_items) {
         checkNextPage = false
@@ -422,7 +348,7 @@ async function getEventsFromEventbrite(getAll = false) {
       // Current UTC date
       const currentDate = new Date()
 
-      const events: Event[] = data.events
+      const events = data.events
         .filter((event) => {
           if (getAll) {
             return true
@@ -451,12 +377,12 @@ async function getEventsFromEventbrite(getAll = false) {
     } else {
       console.error('Error fetching events from Eventbrite.')
     }
-    return { message: 'Error fetching events from Eventbrite.' } as QueryError
+    return { message: 'Error fetching events from Eventbrite.' }
   }
 }
 
-async function getAttendeesFromEventbrite(eventId: string) {
-  let allAttendees: Attendee[] = []
+async function getAttendeesFromEventbrite(eventId) {
+  let allAttendees
   let currentPage = 1
   let checkNextPage = true
   try {
@@ -470,7 +396,7 @@ async function getAttendeesFromEventbrite(eventId: string) {
         }
       )
 
-      const data = response.data as EventbriteAttendeesResponse
+      const data = response.data
 
       if (!data.pagination.has_more_items) {
         checkNextPage = false
@@ -478,7 +404,7 @@ async function getAttendeesFromEventbrite(eventId: string) {
         currentPage += 1
       }
 
-      const attendees: Attendee[] = data.attendees
+      const attendees = data.attendees
         .filter((att) => att.status === 'Attending')
         .map((att) => ({
           firstName: capitalizeName(att.profile.first_name),
@@ -499,15 +425,15 @@ async function getAttendeesFromEventbrite(eventId: string) {
     } else {
       console.error('Error fetching participants from Eventbrite.')
     }
-    return { message: 'Error fetching participants from Eventbrite.' } as QueryError
+    return { message: 'Error fetching participants from Eventbrite.' }
   }
 }
 
-function isAdminInfo(firstName: string, lastName: string, email: string) {
+function isAdminInfo(firstName, lastName, email) {
   return firstName === AdminFirstName && lastName === AdminLastName && email === AdminEmail
 }
 
-function isAttendeePresent(firstName: string, lastName: string, email: string, attendees: Attendee[]) {
+function isAttendeePresent(firstName, lastName, email, attendees) {
   return attendees.some(
     (att) =>
       att.email === email &&
@@ -516,7 +442,7 @@ function isAttendeePresent(firstName: string, lastName: string, email: string, a
   )
 }
 
-function sortAttendees(attendees: Attendee[]) {
+function sortAttendees(attendees) {
   return attendees.sort((a, b) => {
     const firstNameA = a.firstName
     const firstNameB = b.firstName
@@ -540,17 +466,17 @@ function sortAttendees(attendees: Attendee[]) {
   })
 }
 
-function assignIDToAttendees(attendees: Attendee[], startingIndex?: number) {
+function assignIDToAttendees(attendees, startingIndex) {
   const baseIndex = startingIndex ?? 0
-  return attendees.map((attendee, index) => ({ ...attendee, id: index + 1 + baseIndex }) as Attendee)
+  return attendees.map((attendee, index) => ({ ...attendee, id: index + 1 + baseIndex }))
 }
 
-function getOppositeGenderOfAttendee(email: string, attendees: Attendee[]) {
+function getOppositeGenderOfAttendee(email, attendees) {
   const ourAttendee = attendees.find((att) => att.email === email)
   return GenderToOppositeGender[ourAttendee?.gender ?? Gender.FEMALE]
 }
 
-function getPublicAttendeeName(attendee: Attendee, attendees: Attendee[]) {
+function getPublicAttendeeName(attendee, attendees) {
   const attendeesWithSameFirstName = attendees.filter(
     (att) => attendee.firstName === att.firstName && attendee.lastName !== att.lastName
   )
@@ -563,29 +489,26 @@ function getPublicAttendeeName(attendee: Attendee, attendees: Attendee[]) {
   return attendee.firstName
 }
 
-function makePublicAttendees(attendees: Attendee[], gender: Gender) {
+function makePublicAttendees(attendees, gender) {
   const filteredAttendees = attendees.filter((att) => att.gender !== gender)
-  return filteredAttendees.map(
-    (att) =>
-      ({
-        name: getPublicAttendeeName(att, filteredAttendees),
-        id: att.id
-      }) as PublicAttendee
-  )
+  return filteredAttendees.map((att) => ({
+    name: getPublicAttendeeName(att, filteredAttendees),
+    id: att.id
+  }))
 }
 
 const setEventMatchFormData = async (
-  eventId: string,
-  firstName: string,
-  lastName: string,
-  email: string,
-  matches: string[],
-  notes: string,
-  feedback: string,
-  referralInfo: string,
-  cellPhone: string,
-  websiteFeedback: string | undefined,
-  sendContactToNonMutual: boolean
+  eventId,
+  firstName,
+  lastName,
+  email,
+  matches,
+  notes,
+  feedback,
+  referralInfo,
+  cellPhone,
+  websiteFeedback,
+  sendContactToNonMutual
 ) => {
   // Make sure the matches are numbers
   if (matches.some((str) => isNaN(parseInt(str)) || parseInt(str) === 0) || matches.length > 50) {
@@ -601,7 +524,7 @@ const setEventMatchFormData = async (
   }
 
   if (!eventsList.some((e) => e.id === eventId)) {
-    return { message: 'Submissions for this event are now closed.' } as QueryError
+    return { message: 'Submissions for this event are now closed.' }
   }
 
   const attendees = await getAttendeesFromDatabase(eventId)
@@ -612,7 +535,7 @@ const setEventMatchFormData = async (
   const isValidAttendee = isAttendeePresent(firstName, lastName, email, attendees)
   const ourAttendee = attendees.find((att) => att.email === email)
   if (!isValidAttendee || !ourAttendee) {
-    return { message: 'Participant not found in the database.' } as QueryError
+    return { message: 'Participant not found in the database.' }
   }
 
   const interests = matches.length > 0 ? matches.sort().join(',') : '--'
@@ -639,8 +562,7 @@ const setEventMatchFormData = async (
 }
 
 async function scheduleReminderEmailsForToday() {
-  let allEvents: { id: string; name: { text: string }; start: { utc: string; local: string }; end: { utc: string } }[] =
-    []
+  let allEvents
   let currentPage = 1
   let checkNextPage = true
   try {
@@ -655,7 +577,7 @@ async function scheduleReminderEmailsForToday() {
         }
       )
 
-      const data = response.data as EventbriteEventsResponse
+      const data = response.data
 
       if (!data.pagination.has_more_items) {
         checkNextPage = false
@@ -710,7 +632,7 @@ app.use(
   })
 )
 
-app.post('/contact', (req, res: Response) => {
+app.post('/contact', (req, res) => {
   try {
     const { message, email, name } = req.body
 
@@ -740,7 +662,7 @@ app.post('/contact', (req, res: Response) => {
   }
 })
 
-app.get('/events', async (_req, res: Response) => {
+app.get('/events', async (req, res) => {
   try {
     const events = await getEventsFromEventbrite()
     if (isQueryError(events)) {
@@ -758,7 +680,7 @@ app.get('/events', async (_req, res: Response) => {
   }
 })
 
-app.post('/admin/login', async (req: Request<{}, {}, PostAdminLoginRequest>, res: Response) => {
+app.post('/admin/login', async (req, res) => {
   try {
     const { username, password } = req.body
     const normalizedUsername = normalizeString(username)
@@ -782,89 +704,86 @@ app.post('/admin/login', async (req: Request<{}, {}, PostAdminLoginRequest>, res
   }
 })
 
-app.post(
-  '/admin/event-participants',
-  async (req: Request<{}, {}, PostAdminEventParticipantsRequest>, res: Response) => {
-    try {
-      const { eventId, username, password } = req.body
-      const normalizedUsername = normalizeString(username)
+app.post('/admin/event-participants', async (req, res) => {
+  try {
+    const { eventId, username, password } = req.body
+    const normalizedUsername = normalizeString(username)
 
-      if (!(normalizedUsername === AdminEmail && password === AdminPassword)) {
-        res.json({ error: 'Incorrect username or password.' })
+    if (!(normalizedUsername === AdminEmail && password === AdminPassword)) {
+      res.json({ error: 'Incorrect username or password.' })
+      return
+    }
+
+    const eventbriteAttendees = await getAttendeesFromEventbrite(eventId)
+    if (isQueryError(eventbriteAttendees)) {
+      res.json({ error: eventbriteAttendees.message })
+      return
+    }
+
+    const databaseAttendees = await getAttendeesFromDatabase(eventId)
+    if (isQueryError(databaseAttendees)) {
+      res.json({ error: databaseAttendees.message })
+      return
+    }
+
+    let allAttendees
+    if (databaseAttendees.length === 0) {
+      // This is the first request for this event. We must initialize the database.
+      const sortedAttendees = sortAttendees(eventbriteAttendees)
+      const maleAttendees = assignIDToAttendees(sortedAttendees.filter((att) => att.gender === Gender.MALE))
+      const femaleAttendees = assignIDToAttendees(sortedAttendees.filter((att) => att.gender === Gender.FEMALE))
+      allAttendees = [...maleAttendees, ...femaleAttendees]
+
+      // Initialize the database
+      const queryResult = await addAttendeesToDatabase(eventId, allAttendees)
+      if (isQueryError(queryResult)) {
+        res.json({ error: queryResult.message })
         return
       }
+    } else {
+      // We already have data in the database. Check if anyone new has been added to Eventbrite.
+      const attendeesNotInDatabase = eventbriteAttendees.filter(
+        (ebAtt) => !databaseAttendees.some((dbAtt) => dbAtt.email === ebAtt.email)
+      )
+      if (attendeesNotInDatabase.length > 0) {
+        // There is someone in the Eventbrite list who is not yet in our database.
+        const sortedNewAttendees = sortAttendees(attendeesNotInDatabase)
+        // Assign them IDs starting from the last index of the attendees who already have IDs
+        const newMaleAttendees = assignIDToAttendees(
+          sortedNewAttendees.filter((att) => att.gender === Gender.MALE),
+          databaseAttendees.filter((att) => att.gender === Gender.MALE).length
+        )
+        const newFemaleAttendees = assignIDToAttendees(
+          sortedNewAttendees.filter((att) => att.gender === Gender.FEMALE),
+          databaseAttendees.filter((att) => att.gender === Gender.FEMALE).length
+        )
+        const allNewAttendees = [...newMaleAttendees, ...newFemaleAttendees]
+        allAttendees = [...databaseAttendees, ...allNewAttendees]
 
-      const eventbriteAttendees = await getAttendeesFromEventbrite(eventId)
-      if (isQueryError(eventbriteAttendees)) {
-        res.json({ error: eventbriteAttendees.message })
-        return
-      }
-
-      const databaseAttendees = await getAttendeesFromDatabase(eventId)
-      if (isQueryError(databaseAttendees)) {
-        res.json({ error: databaseAttendees.message })
-        return
-      }
-
-      let allAttendees: Attendee[] = []
-      if (databaseAttendees.length === 0) {
-        // This is the first request for this event. We must initialize the database.
-        const sortedAttendees = sortAttendees(eventbriteAttendees)
-        const maleAttendees = assignIDToAttendees(sortedAttendees.filter((att) => att.gender === Gender.MALE))
-        const femaleAttendees = assignIDToAttendees(sortedAttendees.filter((att) => att.gender === Gender.FEMALE))
-        allAttendees = [...maleAttendees, ...femaleAttendees]
-
-        // Initialize the database
-        const queryResult = await addAttendeesToDatabase(eventId, allAttendees)
+        // Add the new people to the database
+        const queryResult = await addAttendeesToDatabase(eventId, allNewAttendees)
         if (isQueryError(queryResult)) {
           res.json({ error: queryResult.message })
           return
         }
       } else {
-        // We already have data in the database. Check if anyone new has been added to Eventbrite.
-        const attendeesNotInDatabase = eventbriteAttendees.filter(
-          (ebAtt) => !databaseAttendees.some((dbAtt) => dbAtt.email === ebAtt.email)
-        )
-        if (attendeesNotInDatabase.length > 0) {
-          // There is someone in the Eventbrite list who is not yet in our database.
-          const sortedNewAttendees = sortAttendees(attendeesNotInDatabase)
-          // Assign them IDs starting from the last index of the attendees who already have IDs
-          const newMaleAttendees = assignIDToAttendees(
-            sortedNewAttendees.filter((att) => att.gender === Gender.MALE),
-            databaseAttendees.filter((att) => att.gender === Gender.MALE).length
-          )
-          const newFemaleAttendees = assignIDToAttendees(
-            sortedNewAttendees.filter((att) => att.gender === Gender.FEMALE),
-            databaseAttendees.filter((att) => att.gender === Gender.FEMALE).length
-          )
-          const allNewAttendees = [...newMaleAttendees, ...newFemaleAttendees]
-          allAttendees = [...databaseAttendees, ...allNewAttendees]
-
-          // Add the new people to the database
-          const queryResult = await addAttendeesToDatabase(eventId, allNewAttendees)
-          if (isQueryError(queryResult)) {
-            res.json({ error: queryResult.message })
-            return
-          }
-        } else {
-          allAttendees = databaseAttendees
-        }
+        allAttendees = databaseAttendees
       }
-
-      const publicAttendees = makePublicAttendees(allAttendees, Gender.MALE)
-      res.json({ public_attendees: publicAttendees, admin_attendees: allAttendees })
-    } catch (e) {
-      if (e instanceof Error) {
-        console.error('Unknown error in admin event-participants endpoint.', e.message)
-      } else {
-        console.error('Unknown error in admin event-participants endpoint.')
-      }
-      res.json({ error: 'Error getting event participants.' })
     }
-  }
-)
 
-app.post('/event-participants', async (req: Request<{}, {}, PostEventParticipantsRequest>, res: Response) => {
+    const publicAttendees = makePublicAttendees(allAttendees, Gender.MALE)
+    res.json({ public_attendees: publicAttendees, admin_attendees: allAttendees })
+  } catch (e) {
+    if (e instanceof Error) {
+      console.error('Unknown error in admin event-participants endpoint.', e.message)
+    } else {
+      console.error('Unknown error in admin event-participants endpoint.')
+    }
+    res.json({ error: 'Error getting event participants.' })
+  }
+})
+
+app.post('/event-participants', async (req, res) => {
   try {
     const { eventId, firstName, lastName, email } = req.body
     const normalizedFirstName = capitalizeName(firstName)
@@ -889,7 +808,7 @@ app.post('/event-participants', async (req: Request<{}, {}, PostEventParticipant
       return
     }
 
-    let allAttendees: Attendee[] = []
+    let allAttendees
     if (databaseAttendees.length === 0) {
       // This is the first request for this event. We must initialize the database.
       const sortedAttendees = sortAttendees(eventbriteAttendees)
@@ -965,7 +884,7 @@ app.post('/event-participants', async (req: Request<{}, {}, PostEventParticipant
   }
 })
 
-app.post('/match', async (req: Request<{}, {}, PostMatchRequest>, res: Response) => {
+app.post('/match', async (req, res) => {
   try {
     const {
       eventId,
@@ -1012,6 +931,14 @@ app.post('/match', async (req: Request<{}, {}, PostMatchRequest>, res: Response)
   }
 })
 
-app.listen(Port, () => {
-  console.log(`Server running on Port ${Port}`)
+app.get('/', (req, res) => {
+  res.sendStatus(200)
 })
+
+//express global error handling: https://expressjs.com/en/guide/error-handling.html
+app.use((err, req, res, next) => {
+  console.error(err.stack)
+  res.status(500).send('Something broke!')
+})
+
+module.exports = app
