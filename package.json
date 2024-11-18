@@ -23,7 +23,7 @@
     "prettier": "^3.3.3"
   },
   "engines": {
-    "node": "18.x"
+    "node": "20.x"
   },
   "devDependencies": {
     "@types/axios": "^0.9.36",
