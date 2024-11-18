@@ -10,9 +10,9 @@ const getEventsFromEventbrite = async (getAll = false) => {
   try {
     const data = await eventbrite.get(`https://www.eventbriteapi.com/v3/organizations/${eventbriteOrg}/events`)
     const currentDate = new Date()
-    events = data.filter((event) => {
+    events = data
+      .filter((event) => {
         if (getAll) {
-          console.log('true')
           return true
         }
 
@@ -25,11 +25,9 @@ const getEventsFromEventbrite = async (getAll = false) => {
           eventFormDeadline.setUTCHours(12, 55, 0, 0)
           return currentDate < eventFormDeadline
         }
-        console.log('false')
         return false // Event hasn't started yet
       })
       .map((event) => ({ id: event.id, name: event.name.text, start: event.start.local }))
-      console.log(events)
   } catch (e) {
     console.error('EVENTBRITE CONTROLLER ERROR:', e.message)
   }
@@ -39,8 +37,7 @@ const getEventsFromEventbrite = async (getAll = false) => {
 const getAttendeesFromEventbrite = async (eventId) => {
   let filteredAttendees = []
   try {
-    const data = eventbrite.get(`https://www.eventbriteapi.com/v3/events/${eventId}/attendees`)
-
+    const data = await eventbrite.get(`https://www.eventbriteapi.com/v3/events/${eventId}/attendees`)
     const attendees = data.attendees
       .filter((att) => att.status === 'Attending')
       .map((att) => ({
@@ -59,9 +56,8 @@ const getAttendeesFromEventbrite = async (eventId) => {
 }
 
 const scheduleReminderEmailsForToday = async () => {
-  let allEvents
   try {
-    const data = eventbrite.get(`https://www.eventbriteapi.com/v3/organizations/${eventbriteOrg}/events`)
+    const data = await eventbrite.get(`https://www.eventbriteapi.com/v3/organizations/${eventbriteOrg}/events`)
 
     const currentDate = new Date()
     const events = data.events.filter((event) => {

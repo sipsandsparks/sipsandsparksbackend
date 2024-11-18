@@ -19,7 +19,7 @@ const getAttendeesFromDatabaseToRemind = async (eventId) => {
       email: att.email
     }))
   } catch (e) {
-    console.error('Error fetching participants from database:', e.message)
+    console.error('DB CONTROLLER ERROR:', e.message)
   }
   return result
 }
@@ -43,7 +43,7 @@ const addAttendeesToDatabase = async (eventId, attendees) => {
       args
     )
   } catch (e) {
-    console.error('Error adding participants to database:', e.message)
+    console.error('DB CONTROLLER ERROR:', e.message)
   }
 }
 
@@ -58,9 +58,7 @@ const updateAttendeeAttendance = async (eventId, email) => {
       [eventId, email]
     )
   } catch (e) {
-    console.error('Error updating attendance in database.', e.message)
-  } finally {
-    client.release()
+    console.error('DB CONTROLLER ERROR', e.message)
   }
 }
 
@@ -91,9 +89,7 @@ const addMatchFormSubmissionToDatabase = async (
       [interests, feedback, referralInfo, cellPhone, notes, websiteFeedback, sendContactToNonMutual, eventId, email]
     )
   } catch (e) {
-    console.error('Error adding match form submission to database.', e.message)
-  } finally {
-    client.release()
+    console.error('DB CONTROLLER ERROR:', e.message)
   }
 }
 
@@ -126,9 +122,7 @@ const getAttendeesFromDatabase = async (eventId) => {
 
     return attendees.sort((a, b) => a.id - b.id)
   } catch (e) {
-    console.error('Error fetching participants from database.', e.message)
-  } finally {
-    client.release()
+    console.error('DB CONTROLLER ERROR:', e.message)
   }
 }
 

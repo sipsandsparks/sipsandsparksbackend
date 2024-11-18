@@ -21,7 +21,7 @@ const get = async (url) => {
       }
     }
   } catch (e) {
-    console.error('Error fetching events from Eventbrite.', e.message)
+    console.error('EVENTBRITE SERVICE ERROR:', e.message)
   }
   return data
 }

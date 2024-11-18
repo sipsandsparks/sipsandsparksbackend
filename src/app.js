@@ -77,8 +77,7 @@ app.post('/contact', (req, res) => {
   }
 })
 
-//TODO: Eventbrite creds
-app.get('/events', async (req, res) => {
+app.get('/events', async (_, res) => {
   try {
     const events = await eventbrite.getEventsFromEventbrite()
     if (isQueryError(events)) {
@@ -349,7 +348,7 @@ app.post('/match', async (req, res) => {
 
 //This is a DB seeding function for local testing. I will delete.
 const j = require('../data/791645953357_attendees.json')
-const {seed} = require('./services/db')
+const { seed } = require('./services/db')
 app.get('/seed', async (req, res) => {
   await seed()
   await db.addAttendeesToDatabase(1, j)
