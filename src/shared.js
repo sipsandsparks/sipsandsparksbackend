@@ -1,6 +1,7 @@
 const Gender = {
   MALE: 'Male',
-  FEMALE: 'Female'
+  FEMALE: 'Female',
+  OTHER: 'Other'
 }
 
 const isQueryError = (obj) => {

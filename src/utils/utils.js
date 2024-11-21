@@ -1,3 +1,5 @@
+const { Gender } = require('../shared')
+
 const AdminFirstName = process.env.ADMIN_FIRST_NAME
 const AdminLastName = process.env.ADMIN_LAST_NAME
 const AdminEmail = process.env.ADMIN_EMAIL
@@ -15,7 +17,6 @@ function removeDuplicateEmailsFromAttendees(attendees) {
 }
 
 function normalizeString(str) {
-  console.log(str)
   return str.toLowerCase().trim()
 }
 
@@ -97,6 +98,17 @@ function makePublicAttendees(attendees, gender) {
   }))
 }
 
+const EventbriteTicketClassToGender = (ticketClass) => {
+  switch (ticketClass) {
+    case 'Male Ticket':
+      return Gender.MALE
+    case 'Female Ticket':
+      return Gender.FEMALE
+    default:
+      return Gender.OTHER
+  }
+}
+
 module.exports = {
   removeDuplicateEmailsFromAttendees,
   normalizeString,
@@ -107,5 +119,6 @@ module.exports = {
   assignIDToAttendees,
   getOppositeGenderOfAttendee,
   getPublicAttendeeName,
-  makePublicAttendees
+  makePublicAttendees,
+  EventbriteTicketClassToGender
 }

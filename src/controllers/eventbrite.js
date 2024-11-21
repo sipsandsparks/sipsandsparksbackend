@@ -1,14 +1,22 @@
 const eventbrite = require('../services/eventbrite')
 
 const { sendReminderEmails } = require('../services/emails')
-const { removeDuplicateEmailsFromAttendees } = require('../utils/utils')
+const {
+  removeDuplicateEmailsFromAttendees,
+  normalizeString,
+  capitalizeName,
+  EventbriteTicketClassToGender
+} = require('../utils/utils')
 
 const eventbriteOrg = process.env.EVENTBRITE_ORG
 
 const getEventsFromEventbrite = async (getAll = false) => {
   let events
   try {
-    const data = await eventbrite.get(`https://www.eventbriteapi.com/v3/organizations/${eventbriteOrg}/events`)
+    const data = await eventbrite.get(
+      `https://www.eventbriteapi.com/v3/organizations/${eventbriteOrg}/events`,
+      'events'
+    )
     const currentDate = new Date()
     events = data
       .filter((event) => {
@@ -37,17 +45,16 @@ const getEventsFromEventbrite = async (getAll = false) => {
 const getAttendeesFromEventbrite = async (eventId) => {
   let filteredAttendees = []
   try {
-    const data = await eventbrite.get(`https://www.eventbriteapi.com/v3/events/${eventId}/attendees`)
-    const attendees = data.attendees
+    const data = await eventbrite.get(`https://www.eventbriteapi.com/v3/events/${eventId}/attendees`, 'attendees')
+    const attendees = data
       .filter((att) => att.status === 'Attending')
       .map((att) => ({
         firstName: capitalizeName(att.profile.first_name),
         lastName: capitalizeName(att.profile.last_name),
         email: normalizeString(att.profile.email),
-        gender: EventbriteTicketClassToGender[att.ticket_class_name],
+        gender: EventbriteTicketClassToGender(att.ticket_class_name),
         id: 0
       }))
-
     filteredAttendees = removeDuplicateEmailsFromAttendees(attendees)
   } catch (e) {
     console.error('EVENTBRITE CONTROLLER ERROR:', e.message)

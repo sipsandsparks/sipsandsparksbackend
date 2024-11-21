@@ -2,7 +2,7 @@ const axios = require('axios')
 
 const EventbriteToken = process.env.EVENTBRITE_TOKEN
 
-const get = async (url) => {
+const get = async (url, field) => {
   let currentPage = 1
   let checkNextPage = true
   let data = []
@@ -13,7 +13,7 @@ const get = async (url) => {
           Authorization: `Bearer ${EventbriteToken}`
         }
       })
-      data.push(...response.data.events)
+      data.push(...response.data[field])
       if (!data.pagination?.has_more_items) {
         checkNextPage = false
       } else {
