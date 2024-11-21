@@ -22,6 +22,7 @@ const AdminEmail = process.env.ADMIN_EMAIL
 const AdminPassword = process.env.ADMIN_PASSWORD
 const ContactEmail = 'contact@sipsandsparks.org'
 const EmailPassword = process.env.EMAIL_PASSWORD
+const clientUrl = process.env.NODE_ENV === 'dev' ? 'http://localhost:8080' : 'https://sipsandsparks.org'
 
 const ContactTransporter = nodemailer.createTransport({
   host: 'smtp.zoho.com',
@@ -42,11 +43,10 @@ reminderJob.start()
 app.use(express.json())
 app.use(
   cors({
-    origin: 'https://sipsandsparks.org'
+    origin: clientUrl
   })
 )
 
-//Works: sends email to ourselves, from ourselves.
 app.post('/contact', (req, res) => {
   try {
     const { message, email, name } = req.body
@@ -68,29 +68,22 @@ app.post('/contact', (req, res) => {
 
     res.status(200).json()
   } catch (e) {
-    if (e instanceof Error) {
-      console.error('Unknown error in contact endpoint.', e.message)
-    } else {
-      console.error('Unknown error in contact endpoint.')
-    }
+    console.error('Unknown error in contact endpoint.', e.message)
     res.json({ error: 'Error submitting contact query.' })
   }
 })
 
 app.get('/events', async (_, res) => {
   try {
-    const events = await eventbrite.getEventsFromEventbrite()
+    const events = await eventbrite.getEventsFromEventbrite(true)
     if (isQueryError(events)) {
       res.json({ error: events.message })
       return
     }
+    console.log(events)
     res.json({ events: events })
   } catch (e) {
-    if (e instanceof Error) {
-      console.error('Unknown error in events endpoint.', e.message)
-    } else {
-      console.error('Unknown error in events endpoint.')
-    }
+    console.error('Unknown error in events endpoint.', e.message)
     res.json({ error: 'Error getting events.' })
   }
 })
@@ -110,11 +103,7 @@ app.post('/admin/login', async (req, res) => {
       res.json({ error: 'Incorrect username or password.' })
     }
   } catch (e) {
-    if (e instanceof Error) {
-      console.error('Unknown error in admin login endpoint.', e.message)
-    } else {
-      console.error('Unknown error in admin login endpoint.')
-    }
+    console.error('Unknown error in admin login endpoint.', e.message)
     res.json({ error: 'Internal Error encountered while trying to login.' })
   }
 })
