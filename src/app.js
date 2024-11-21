@@ -148,7 +148,6 @@ app.post('/admin/event-participants', async (req, res) => {
       const maleAttendees = assignIDToAttendees(sortedAttendees.filter((att) => att.gender === Gender.MALE))
       const femaleAttendees = assignIDToAttendees(sortedAttendees.filter((att) => att.gender === Gender.FEMALE))
       allAttendees = [...maleAttendees, ...femaleAttendees]
-
       // Initialize the database
       const queryResult = await db.addAttendeesToDatabase(eventId, allAttendees)
       if (isQueryError(queryResult)) {
@@ -189,11 +188,7 @@ app.post('/admin/event-participants', async (req, res) => {
     const publicAttendees = makePublicAttendees(allAttendees, Gender.MALE)
     res.json({ public_attendees: publicAttendees, admin_attendees: allAttendees })
   } catch (e) {
-    if (e instanceof Error) {
-      console.error('Unknown error in admin event-participants endpoint.', e.message)
-    } else {
-      console.error('Unknown error in admin event-participants endpoint.')
-    }
+    console.error('Unknown error in admin event-participants endpoint.', e.message)
     res.json({ error: 'Error getting event participants.' })
   }
 })
@@ -290,11 +285,7 @@ app.post('/event-participants', async (req, res) => {
       }
     }
   } catch (e) {
-    if (e instanceof Error) {
-      console.error('Unknown error in event-participants endpoint.', e.message)
-    } else {
-      console.error('Unknown error in event-participants endpoint.')
-    }
+    console.error('Unknown error in event-participants endpoint.', e.message)
     res.json({ error: 'Error getting event participants.' })
   }
 })
@@ -337,11 +328,7 @@ app.post('/match', async (req, res) => {
     }
     res.status(200).json()
   } catch (e) {
-    if (e instanceof Error) {
-      console.error('Unknown error in match endpoint.', e.message)
-    } else {
-      console.error('Unknown error in match endpoint.')
-    }
+    console.error('Unknown error in match endpoint.', e.message)
     res.json({ error: 'Error submitting match form.' })
   }
 })
@@ -351,7 +338,7 @@ const j = require('../data/791645953357_attendees.json')
 const { seed } = require('./services/db')
 app.get('/seed', async (req, res) => {
   await seed()
-  await db.addAttendeesToDatabase(1, j)
+  // await db.addAttendeesToDatabase(1, j)
   res.sendStatus(200)
 })
 
