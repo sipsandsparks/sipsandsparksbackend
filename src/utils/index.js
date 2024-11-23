@@ -4,7 +4,7 @@ const AdminFirstName = process.env.ADMIN_FIRST_NAME
 const AdminLastName = process.env.ADMIN_LAST_NAME
 const AdminEmail = process.env.ADMIN_EMAIL
 
-function removeDuplicateEmailsFromAttendees(attendees) {
+const removeDuplicateEmailsFromAttendees = (attendees) => {
   const seenEmails = new Set()
   return attendees.filter((att) => {
     if (seenEmails.has(att.email)) {
@@ -16,11 +16,11 @@ function removeDuplicateEmailsFromAttendees(attendees) {
   })
 }
 
-function normalizeString(str) {
+const normalizeString = (str) => {
   return str.toLowerCase().trim()
 }
 
-function capitalizeName(name) {
+const capitalizeName = (name) => {
   if (name.length === 0) {
     return name
   }
@@ -30,11 +30,11 @@ function capitalizeName(name) {
   return trimmedName.charAt(0).toUpperCase() + trimmedName.slice(1)
 }
 
-function isAdminInfo(firstName, lastName, email) {
+const isAdminInfo = (firstName, lastName, email) => {
   return firstName === AdminFirstName && lastName === AdminLastName && email === AdminEmail
 }
 
-function isAttendeePresent(firstName, lastName, email, attendees) {
+const isAttendeePresent = (firstName, lastName, email, attendees) => {
   return attendees.some(
     (att) =>
       att.email === email &&
@@ -43,7 +43,7 @@ function isAttendeePresent(firstName, lastName, email, attendees) {
   )
 }
 
-function sortAttendees(attendees) {
+const sortAttendees = (attendees) => {
   return attendees.sort((a, b) => {
     const firstNameA = a.firstName
     const firstNameB = b.firstName
@@ -67,17 +67,17 @@ function sortAttendees(attendees) {
   })
 }
 
-function assignIDToAttendees(attendees, startingIndex) {
+const assignIDToAttendees = (attendees, startingIndex) => {
   const baseIndex = startingIndex ?? 0
   return attendees.map((attendee, index) => ({ ...attendee, id: index + 1 + baseIndex }))
 }
 
-function getOppositeGenderOfAttendee(email, attendees) {
+const getOppositeGenderOfAttendee = (email, attendees) => {
   const ourAttendee = attendees.find((att) => att.email === email)
   return GenderToOppositeGender[ourAttendee?.gender ?? Gender.FEMALE]
 }
 
-function getPublicAttendeeName(attendee, attendees) {
+const getPublicAttendeeName = (attendee, attendees) => {
   const attendeesWithSameFirstName = attendees.filter(
     (att) => attendee.firstName === att.firstName && attendee.lastName !== att.lastName
   )
@@ -90,7 +90,7 @@ function getPublicAttendeeName(attendee, attendees) {
   return attendee.firstName
 }
 
-function makePublicAttendees(attendees, gender) {
+const makePublicAttendees = (attendees, gender) => {
   const filteredAttendees = attendees.filter((att) => att.gender !== gender)
   return filteredAttendees.map((att) => ({
     name: getPublicAttendeeName(att, filteredAttendees),

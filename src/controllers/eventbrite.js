@@ -6,7 +6,7 @@ const {
   normalizeString,
   capitalizeName,
   EventbriteTicketClassToGender
-} = require('../utils/utils')
+} = require('../utils')
 
 const eventbriteOrg = process.env.EVENTBRITE_ORG
 
@@ -37,7 +37,8 @@ const getEventsFromEventbrite = async (getAll = false) => {
       })
       .map((event) => ({ id: event.id, name: event.name.text, start: event.start.local }))
   } catch (e) {
-    console.error('EVENTBRITE CONTROLLER ERROR:', e.message)
+    console.error('EVENTBRITE CONTROLLER ERROR (getEventsFromEventbrite):', e.message)
+    return e
   }
   return events
 }
@@ -57,14 +58,15 @@ const getAttendeesFromEventbrite = async (eventId) => {
       }))
     filteredAttendees = removeDuplicateEmailsFromAttendees(attendees)
   } catch (e) {
-    console.error('EVENTBRITE CONTROLLER ERROR:', e.message)
+    console.error('EVENTBRITE CONTROLLER ERROR (getAttendeesFromEventbrite):', e.message)
+    return e
   }
   return filteredAttendees
 }
 
 const scheduleReminderEmailsForToday = async () => {
   try {
-    const data = await eventbrite.get(`https://www.eventbriteapi.com/v3/organizations/${eventbriteOrg}/events`)
+    const data = await eventbrite.get(`https://www.eventbriteapi.com/v3/organizations/${eventbriteOrg}/events`, 'events')
 
     const currentDate = new Date()
     const events = data.events.filter((event) => {
@@ -88,7 +90,8 @@ const scheduleReminderEmailsForToday = async () => {
       }
     })
   } catch (e) {
-    console.error('Error scheduling reminder emails:', e.message)
+    console.error('EVENTBRITE CONTROLLER ERROR (scheduleReminderEmailsForToday):', e.message)
+    return e
   }
 }
 

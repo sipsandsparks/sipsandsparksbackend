@@ -1,4 +1,4 @@
-const { isAttendeePresent, getPublicAttendeeName } = require('../utils/utils')
+const { isAttendeePresent, getPublicAttendeeName } = require('../utils')
 
 const db = require('../services/db')
 const eventbrite = require('./eventbrite')
@@ -19,7 +19,7 @@ const getAttendeesFromDatabaseToRemind = async (eventId) => {
       email: att.email
     }))
   } catch (e) {
-    console.error('DB CONTROLLER ERROR:', e.message)
+    console.error('DB CONTROLLER ERROR (getAttendeesFromDatabaseToRemind):', e.message)
   }
   return result
 }
@@ -43,7 +43,7 @@ const addAttendeesToDatabase = async (eventId, attendees) => {
       args
     )
   } catch (e) {
-    console.error('DB CONTROLLER ERROR:', e.message)
+    console.error('DB CONTROLLER ERROR (addAttendeesToDatabase):', e.message)
   }
 }
 
@@ -58,7 +58,7 @@ const updateAttendeeAttendance = async (eventId, email) => {
       [eventId, email]
     )
   } catch (e) {
-    console.error('DB CONTROLLER ERROR', e.message)
+    console.error('DB CONTROLLER ERROR (updateAttendeeAttendance)', e.message)
   }
 }
 
@@ -89,7 +89,7 @@ const addMatchFormSubmissionToDatabase = async (
       [interests, feedback, referralInfo, cellPhone, notes, websiteFeedback, sendContactToNonMutual, eventId, email]
     )
   } catch (e) {
-    console.error('DB CONTROLLER ERROR:', e.message)
+    console.error('DB CONTROLLER ERROR (addMatchFormSubmissionToDatabase):', e.message)
   }
 }
 
@@ -122,7 +122,7 @@ const getAttendeesFromDatabase = async (eventId) => {
 
     return attendees.sort((a, b) => a.id - b.id)
   } catch (e) {
-    console.error('DB CONTROLLER ERROR:', e.message)
+    console.error('DB CONTROLLER ERROR (getAttendeesFromDatabase):', e.message)
   }
 }
 
